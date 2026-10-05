@@ -2,9 +2,9 @@
 #
 # Публичный загрузчик установщика animus.
 #
-# Запрашивает GitHub-токен, скачивает приватный install.sh из SOURCE_REPO
-# и запускает его, передавая токен через переменную окружения GITHUB_TOKEN.
-# Без доступа к приватному репозиторию запуск завершается отказом.
+# Запрашивает GitHub-токен, скачивает приватный install.sh из SOURCE_REPO,
+# запускает его и удаляет скачанный файл по завершении. Без доступа к
+# приватному репозиторию запуск завершается отказом.
 #
 # Переменные окружения:
 #   ANIMUS_SOURCE_REPO  owner/repo приватного репозитория (matrixd0t/animus)
@@ -27,13 +27,7 @@ command -v curl >/dev/null 2>&1 || die "нужен curl (apt-get install -y curl
 token="${GITHUB_TOKEN:-}"
 if [[ -z "${token}" ]]; then
     printf 'GitHub token (scope repo, ввод скрыт): ' >&2
-    if [[ -r /dev/tty ]]; then
-        read -r -s token < /dev/tty
-    elif [[ -t 0 ]]; then
-        read -r -s token
-    else
-        die "нет терминала для ввода токена — передайте GITHUB_TOKEN"
-    fi
+    read -r -s token
     printf '\n' >&2
 fi
 [[ -n "${token}" ]] || die "токен не задан"
@@ -52,10 +46,6 @@ fi
 
 [[ -s "${tmp}" ]] || die "получен пустой install.sh"
 
-log "запускаю ${SOURCE_REPO}@${BRANCH}/install.sh"
+log "запускаю ${SOURCE_REPO}@${BRANCH}/install.sh (временный файл будет удалён после завершения)"
 export GITHUB_TOKEN="${token}"
-if [[ ! -t 0 && -r /dev/tty ]]; then
-    bash "${tmp}" < /dev/tty
-else
-    bash "${tmp}"
-fi
+bash "${tmp}"
