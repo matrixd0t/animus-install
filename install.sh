@@ -7,14 +7,12 @@
 # приватному репозиторию запуск завершается отказом.
 #
 # Переменные окружения:
-#   ANIMUS_SOURCE_REPO  owner/repo приватного репозитория (matrixd0t/animus)
-#   ANIMUS_BRANCH       ветка (master)
 #   GITHUB_TOKEN        токен GitHub (иначе берётся из ./<service>/.env или спросит)
 
 set -euo pipefail
 
-SOURCE_REPO="${ANIMUS_SOURCE_REPO:-matrixd0t/animus}"
-BRANCH="${ANIMUS_BRANCH:-master}"
+SOURCE_REPO="matrixd0t/animus"
+BRANCH="master"
 API="https://api.github.com"
 
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
@@ -58,7 +56,11 @@ fi
 [[ -n "${token}" ]] || die "токен не задан"
 
 tmp="$(mktemp)"
-trap 'rm -f "${tmp}"' EXIT
+self=""
+if [[ -f "${BASH_SOURCE[0]:-}" ]]; then
+    self="$(readlink -f "${BASH_SOURCE[0]}")"
+fi
+trap 'rm -f "${tmp}"; if [[ -n "${self}" ]]; then rm -f "${self}"; fi' EXIT
 
 log "проверяю доступ к ${SOURCE_REPO}"
 if ! curl -fsSL \
